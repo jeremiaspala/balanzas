@@ -9,9 +9,9 @@ from datetime import datetime
 
 CHECK_INTERVAL = 1  # segundos
 STABLE_SECONDS = 5  # cuántos ciclos consecutivos se necesita el mismo valor
+LOG_FILE = "/var/log/balanza.log"
 
 class ScaleWorker(threading.Thread):
-    output_lock = threading.Lock()
     workers = []
 
     def __init__(self, scale, db_config, image_dir, line_index):
@@ -60,17 +60,16 @@ class ScaleWorker(threading.Thread):
 
             if stable_count == STABLE_SECONDS and weight >= 100:
                 if not self.en_pesada:
-                    self.log_event(f"📥 Inicio de pesada en {weight:.2f} kg")
+                    self.log_event(f"Inicio de pesada en {weight:.2f} kg")
                     self.en_pesada = True
                     self.capture_images(weight)
 
             if self.en_pesada and weight == 0:
                 self.store_weight(0.0, True)
-                self.log_event(f"✅ Fin de pesada (retorno a 0)")
+                self.log_event("Fin de pesada (retorno a 0)")
                 self.en_pesada = False
                 self.ultimo_peso_estable = None
 
-            self.update_status(weight, stable_count)
             last_weight = weight
             time.sleep(CHECK_INTERVAL)
 
@@ -97,18 +96,11 @@ class ScaleWorker(threading.Thread):
             except socket.timeout:
                 return 0.0
 
-    def update_status(self, weight, stable_count):
-        estado = "EN CERO" if weight == 0 else ("ESTABLE" if stable_count >= STABLE_SECONDS else "Inestable")
-        mensaje = f"[{self.scale['name']}] Peso: {weight:.2f} kg - {estado}"
-        with ScaleWorker.output_lock:
-            sys.stdout.write(f"\0337")
-            sys.stdout.write(f"\033[{self.line_index + 1};0H\033[K{mensaje}\0338")
-            sys.stdout.flush()
-
     def log_event(self, mensaje):
-        with ScaleWorker.output_lock:
-            sys.stdout.write(f"\n[{self.scale['name']}] {mensaje}\n")
-            sys.stdout.flush()
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_line = f"[{now}] [{self.scale['name']}] {mensaje}\n"
+        with open(LOG_FILE, "a") as f:
+            f.write(log_line)
 
     def get_db(self):
         return mysql.connector.connect(**self.db_config)
@@ -170,7 +162,6 @@ def main():
     scales = load_scales(db_config)
     workers = []
 
-    print("\033[2J")
     for idx, scale in enumerate(scales):
         worker = ScaleWorker(scale, db_config, image_dir, idx)
         worker.start()

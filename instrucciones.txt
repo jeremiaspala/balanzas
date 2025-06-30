@@ -1,0 +1,27 @@
+⚙️ Servicio en segundo plano (/etc/systemd/system/balanza.service)
+ini
+Copiar
+Editar
+[Unit]
+Description=Servicio de lectura de balanza
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/balanza/balanza_service.py
+Restart=always
+User=operador
+WorkingDirectory=/opt/balanza
+
+[Install]
+WantedBy=multi-user.target
+bash
+Copiar
+Editar
+# Copiar el script a /opt/balanza
+sudo mkdir -p /opt/balanza
+sudo cp balanza_service.py /opt/balanza/
+sudo chmod +x /opt/balanza/balanza_service.py
+
+# Habilitar servicio
+sudo systemctl daemon-reexec
+sudo systemctl enable --now balanza.service
