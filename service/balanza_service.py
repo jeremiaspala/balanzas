@@ -17,6 +17,7 @@ class ScaleWorker(threading.Thread):
         self.image_dir = image_dir
         self.connection = None
         self.running = True
+        self.increasing = False
 
     def connect_telnet(self):
         while True:
@@ -39,6 +40,13 @@ class ScaleWorker(threading.Thread):
                 self.connect_telnet()
                 continue
 
+            print(f"[{self.scale['name']}] Peso leído: {weight}")
+            if last_weight is not None and weight > last_weight and not self.increasing:
+                print(f"[{self.scale['name']}] Peso comenzó a aumentar")
+                self.increasing = True
+            elif last_weight is not None and weight <= last_weight:
+                self.increasing = False
+
             if last_weight is not None and abs(weight - last_weight) < 0.01:
                 stable_count += 1
             else:
@@ -51,15 +59,20 @@ class ScaleWorker(threading.Thread):
 
     def read_weight(self):
         line = self.connection.read_until(b"\n")
-        try:
-            return float(line.strip())
-        except ValueError:
-            return 0.0
+        text = line.decode("ascii", errors="ignore").strip()
+        parts = text.split()
+        if len(parts) >= 2:
+            try:
+                return float(parts[1])
+            except ValueError:
+                return 0.0
+        return 0.0
 
     def get_db(self):
         return mysql.connector.connect(**self.db_config)
 
     def store_weight(self, weight, stable):
+        print(f"[{self.scale['name']}] Guardando peso {weight} (estable: {stable})")
         db = self.get_db()
         cursor = db.cursor()
         cursor.execute(
@@ -71,6 +84,7 @@ class ScaleWorker(threading.Thread):
         db.close()
 
     def capture_images(self):
+        print(f"[{self.scale['name']}] Capturando imágenes")
         db = self.get_db()
         cursor = db.cursor(dictionary=True)
         cursor.execute("SELECT * FROM cameras WHERE scale_id=%s", (self.scale['id'],))
@@ -88,6 +102,7 @@ class ScaleWorker(threading.Thread):
                     filename = f"{datetime.now().strftime('%H%M%S')}_cam{cam['id']}.jpg"
                     with open(os.path.join(scale_dir, filename), 'wb') as f:
                         f.write(resp.content)
+                    print(f"[{self.scale['name']}] Imagen guardada: {filename}")
             except Exception as e:
                 print(f"Failed to capture image from camera {cam['name']}: {e}")
 
