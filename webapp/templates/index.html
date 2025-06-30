@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<head>
+    <title>Camaras</title>
+</head>
+<body>
+<h1>Listado de Camaras</h1>
+<ul>
+{% for cam in cameras %}
+    <li><a href="{{ url_for('camera_view', cam_id=cam.id) }}">{{ cam.name }}</a></li>
+{% endfor %}
+</ul>
+<a href="{{ url_for('manage_scales') }}">Administrar Balanzas</a>
+</body>
+</html>

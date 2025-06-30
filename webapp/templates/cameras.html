@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<head><title>Camaras</title></head>
+<body>
+<h1>Camaras</h1>
+<form method="post">
+Nombre: <input type="text" name="name"/>
+URL: <input type="text" name="url"/>
+<input type="submit" value="Agregar"/>
+</form>
+<ul>
+{% for c in cameras %}
+<li>{{ c.name }} - {{ c.url }}</li>
+{% endfor %}
+</ul>
+<a href="{{ url_for('manage_scales') }}">Volver</a>
+</body>
+</html>

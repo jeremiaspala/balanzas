@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<head>
+    <title>{{ camera.name }}</title>
+</head>
+<body>
+<h1>{{ camera.name }}</h1>
+<table border="1">
+<tr><th>Fecha</th><th>Peso</th><th>Estable</th></tr>
+{% for w in weights %}
+<tr><td>{{ w.timestamp }}</td><td>{{ w.weight }}</td><td>{{ w.stable }}</td></tr>
+{% endfor %}
+</table>
+<h2>Imagenes</h2>
+{% for img in images %}
+    <img src="{{ img }}" width="300"/>
+{% endfor %}
+</body>
+</html>
