@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<head><title>Balanzas</title></head>
+<body>
+<h1>Balanzas</h1>
+<form method="post">
+Nombre: <input type="text" name="name"/>
+IP: <input type="text" name="ip"/>
+Puerto: <input type="text" name="port"/>
+<input type="submit" value="Agregar"/>
+</form>
+<ul>
+{% for s in scales %}
+<li>{{ s.name }} - <a href="{{ url_for('manage_cameras', scale_id=s.id) }}">Camaras</a></li>
+{% endfor %}
+</ul>
+<a href="{{ url_for('index') }}">Volver</a>
+</body>
+</html>
